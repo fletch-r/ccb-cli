@@ -1,6 +1,6 @@
 use dialoguer::MultiSelect;
-use git2::{Repository, Status};
-
+use git2::{Repository, Signature, Status};
+use git2_credentials::CredentialHandler;
 /*
 Creates to use
     - Clap
@@ -115,6 +115,71 @@ fn is_staged(s: Status) -> bool {
 
         return false;
     }
+}
+
+pub fn get_commit_message() -> String {
+    let message: String = dialoguer::Input::new()
+        .with_prompt("Write a commit message")
+        .interact_text()
+        .unwrap();
+
+    message
+}
+
+pub fn commit(repo: &Repository, message: String) {
+    let mut index = repo.index().unwrap();
+    let tree = repo
+        .find_tree(index.write_tree().unwrap())
+        .unwrap();
+    let author = Signature::now("fletchers", "ath3ris@proton.me").unwrap();
+
+    let parent_commit = repo.head().unwrap().peel_to_commit().unwrap();
+
+    let update_ref = if repo.head().is_ok() {
+        Some("HEAD")
+    } else {
+        None // no HEAD = first commit
+    };
+
+    repo.commit(update_ref, &author, &author, &message, &tree, &[&parent_commit]).unwrap();
+}
+
+pub fn push_confirm() -> bool {
+    let yes: String = dialoguer::Input::new()
+        .with_prompt("Push now?")
+        .interact_text()
+        .unwrap();
+
+    if yes == "yes" || yes == "y" {
+        true
+    } else {
+        false
+    }
+}
+
+pub fn git_commit_push(repo: &Repository, my_branch: &str) {
+    let mut origin = repo.find_remote("origin").unwrap();
+    // Setup authentication callbacks for push
+    let git_config_for_push = git2::Config::open_default().unwrap();
+    let mut credential_handler_for_push = CredentialHandler::new(git_config_for_push);
+    let mut push_callbacks = git2::RemoteCallbacks::new();
+    push_callbacks.credentials(move |url, username, allowed| {
+        credential_handler_for_push.try_next_credential(url, username, allowed)
+    });
+
+    let mut push_options = git2::PushOptions::new();
+    push_options.remote_callbacks(push_callbacks);
+
+    // Push the current HEAD to the specified remote branch
+    origin
+        .push(&["HEAD:refs/heads/".to_owned() + my_branch], Some(&mut push_options))
+        .unwrap();
+}
+
+pub fn git_add_selected(repo: &Repository, paths: &Vec<String>) {
+    let mut index = repo.index().unwrap();
+    index.add_all(paths, git2::IndexAddOption::DEFAULT, None).unwrap();
+    index.write().unwrap();
 }
 
 #[cfg(test)]
