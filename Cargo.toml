@@ -8,4 +8,5 @@ clap = { version = "4.5.45", features = ["derive"] }
 console = "0.16.0"
 dialoguer = "0.12.0"
 git2 = "0.20.2"
+git2_credentials = "0.15.0"
 log = "0.4.27"
