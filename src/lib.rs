@@ -107,6 +107,11 @@ fn get_statuses() -> (Vec<String>, Vec<bool>) {
 pub fn choose_files() -> Vec<String> {
     let (items, defaults) = get_statuses();
 
+    if items.is_empty() {
+        println!("{}", console::style("✔ working tree clean").green());
+        process::exit(1);
+    }
+
     let selection = MultiSelect::new()
         .with_prompt("Choose files to stage")
         .items(&items)
