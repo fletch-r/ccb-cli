@@ -14,6 +14,64 @@ Creates to use
         - Maybe will use
 */
 
+/// Adds an alias for `ccb` to the user's shell profile so that typing `ccb` runs the binary.
+/// This function checks the user's shell and appends the alias to the appropriate profile file.
+/// It only adds the alias if it doesn't already exist.
+pub fn add_ccb_to_path_once() {
+    use std::env;
+    use std::fs::{OpenOptions, read_to_string};
+    use std::io::Write;
+    use std::path::PathBuf;
+
+    // Determine the user's home directory
+    let home_dir = match env::var("HOME") {
+        Ok(path) => PathBuf::from(path),
+        Err(_) => {
+            eprintln!("Could not determine home directory.");
+            return;
+        }
+    };
+
+    // Determine the shell and profile file
+    let shell = env::var("SHELL").unwrap_or_default();
+    let profile_file = if shell.contains("zsh") {
+        home_dir.join(".zshrc")
+    } else if shell.contains("bash") {
+        home_dir.join(".bashrc")
+    } else if shell.contains("fish") {
+        home_dir.join(".config/fish/config.fish")
+    } else {
+        // Default to .bashrc if unknown
+        home_dir.join(".bashrc")
+    };
+
+    // Use the absolute path to the ccb binary
+    let ccb_binary_path = "/Users/andrewfletcher/RustroverProjects/ccb-cli/target/debug/ccb";
+    let alias_line = format!("alias ccb=\"{}\"", ccb_binary_path);
+
+    // Check if the alias already exists
+    if let Ok(contents) = read_to_string(&profile_file) {
+        if contents.contains("alias ccb=") {
+            // Alias already exists, do nothing
+            return;
+        }
+    }
+
+    // Append the alias to the profile file
+    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&profile_file) {
+        if let Err(e) = writeln!(file, "\n{}", alias_line) {
+            eprintln!("Failed to write alias to {:?}: {}", profile_file, e);
+        } else {
+            println!("Added alias for `ccb` to {:?}", profile_file);
+            println!("You may need to restart your terminal or run `source {:?}` to use the alias.", profile_file);
+        }
+    } else {
+        eprintln!("Could not open profile file: {:?}", profile_file);
+    }
+}
+
+
+
 fn get_statuses() -> (Vec<String>, Vec<bool>) {
     let repo = Repository::open(".").unwrap();
     let statuses = repo.statuses(None).unwrap();
@@ -38,6 +96,9 @@ fn get_statuses() -> (Vec<String>, Vec<bool>) {
 
         let b = is_staged(s);
 
+        if s.contains(Status::IGNORED) {
+            continue;
+        }
         items.push(path);
         default_checked.push(b);
     }
@@ -76,7 +137,6 @@ fn is_staged(s: Status) -> bool {
         Status::INDEX_RENAMED,
         Status::INDEX_TYPECHANGE,
         Status::CONFLICTED,
-        Status::IGNORED,
     ];
 
     for status in index {
@@ -126,12 +186,12 @@ pub fn get_commit_message() -> String {
     message
 }
 
-pub fn commit(repo: &Repository, message: String) {
+pub fn commit(repo: &Repository, message: &String) {
     let mut index = repo.index().unwrap();
     let tree = repo
         .find_tree(index.write_tree().unwrap())
         .unwrap();
-    let author = Signature::now("fletchers", "ath3ris@proton.me").unwrap();
+    let author = Signature::now("fletch-r", "ath3ris@proton.me").unwrap();
 
     let parent_commit = repo.head().unwrap().peel_to_commit().unwrap();
 
@@ -157,7 +217,7 @@ pub fn push_confirm() -> bool {
     }
 }
 
-pub fn git_commit_push(repo: &Repository, my_branch: &str) {
+pub fn git_commit_push(repo: &Repository, my_branch: String) {
     let mut origin = repo.find_remote("origin").unwrap();
     // Setup authentication callbacks for push
     let git_config_for_push = git2::Config::open_default().unwrap();
@@ -172,7 +232,7 @@ pub fn git_commit_push(repo: &Repository, my_branch: &str) {
 
     // Push the current HEAD to the specified remote branch
     origin
-        .push(&["HEAD:refs/heads/".to_owned() + my_branch], Some(&mut push_options))
+        .push(&["HEAD:refs/heads/".to_owned() + my_branch.as_str()], Some(&mut push_options))
         .unwrap();
 }
 
@@ -182,17 +242,50 @@ pub fn git_add_selected(repo: &Repository, paths: &Vec<String>) {
     index.write().unwrap();
 }
 
+pub fn get_current_branch_name(repo: &Repository) -> Option<String> {
+    match repo.head() {
+        Ok(head) => {
+            if head.is_branch() {
+                head.shorthand().map(|s| s.to_string())
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use git2::Status;
     use crate::get_statuses;
     use crate::is_staged;
 
+    // === Set-up
+
+    // Download CCB
+
+    // Make a config file
+
+    // Read a config file
+
+    /*
+        Config file:
+        REFERENCE_REGEX = (?!.*\/)([^\\d]*)(\\d+) // Gets the ticket/issue number
+        COMMIT_TEMPLATE = "<type><scope>: <reference> - <description>\n\n<body>\n\n<footer>"
+    */
+
+    // === Functionality
+
+    // Choose files to commit
+
     #[test]
     fn statuses_has_length() {
         let (items, _) = get_statuses();
         assert!(items.len() > 0);
     }
+
+    // Already staged files are checked by default
 
     #[test]
     fn status_returns_true() {
@@ -205,6 +298,18 @@ mod tests {
         let value = is_staged(Status::WT_MODIFIED);
         assert_eq!(value, false);
     }
+
+    // Choose type
+
+    // Enter scope
+
+    // Get reference
+
+    // Enter description
+
+    // Enter body
+
+    // Enter footer
 }
 
 // Add command to PATH
