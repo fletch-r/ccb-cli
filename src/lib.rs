@@ -1,3 +1,9 @@
+use std::{
+    env,
+    fs,
+    io::Write
+};
+use std::path::PathBuf;
 use dialoguer::MultiSelect;
 use git2::{Repository, Signature, Status};
 use git2_credentials::CredentialHandler;
@@ -18,11 +24,6 @@ Creates to use
 /// This function checks the user's shell and appends the alias to the appropriate profile file.
 /// It only adds the alias if it doesn't already exist.
 pub fn add_ccb_to_path_once() {
-    use std::env;
-    use std::fs::{OpenOptions, read_to_string};
-    use std::io::Write;
-    use std::path::PathBuf;
-
     // Determine the user's home directory
     let home_dir = match env::var("HOME") {
         Ok(path) => PathBuf::from(path),
@@ -50,7 +51,7 @@ pub fn add_ccb_to_path_once() {
     let alias_line = format!("alias ccb=\"{}\"", ccb_binary_path);
 
     // Check if the alias already exists
-    if let Ok(contents) = read_to_string(&profile_file) {
+    if let Ok(contents) = fs::read_to_string(&profile_file) {
         if contents.contains("alias ccb=") {
             // Alias already exists, do nothing
             return;
@@ -58,7 +59,7 @@ pub fn add_ccb_to_path_once() {
     }
 
     // Append the alias to the profile file
-    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&profile_file) {
+    if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(&profile_file) {
         if let Err(e) = writeln!(file, "\n{}", alias_line) {
             eprintln!("Failed to write alias to {:?}: {}", profile_file, e);
         } else {
