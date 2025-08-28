@@ -1,8 +1,4 @@
-use std::{
-    env,
-    fs,
-    io::Write
-};
+use std::{env, fs, io::Write, process};
 use std::path::PathBuf;
 use dialoguer::MultiSelect;
 use git2::{Repository, Signature, Status};
@@ -79,6 +75,7 @@ fn get_statuses() -> (Vec<String>, Vec<bool>) {
 
     if statuses.is_empty() {
         println!("{}", console::style("✔ working tree clean").green());
+        process::exit(1);
     }
 
     let mut items = vec![];
