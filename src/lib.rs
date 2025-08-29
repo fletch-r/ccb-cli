@@ -1,6 +1,8 @@
+use gpgme::{Context, Protocol};
 use regex::Regex;
 use std::{env, fs, io::Write, process};
 use std::path::PathBuf;
+use std::str;
 use dialoguer::MultiSelect;
 use git2::{Repository, Signature, Status};
 use git2_credentials::CredentialHandler;
@@ -208,7 +210,7 @@ pub fn get_commit_message(repo: &Repository) -> String {
     message_with_reference
 }
 
-pub fn commit(repo: &Repository, message: &String) {
+pub fn commit(repo: &Repository, message: &String) -> Result<(), Box<dyn std::error::Error>> {
     let mut index = repo.index().unwrap();
     let tree = repo
         .find_tree(index.write_tree().unwrap())
@@ -227,7 +229,25 @@ pub fn commit(repo: &Repository, message: &String) {
         None // no HEAD = first commit
     };
 
-    repo.commit(update_ref, &author, &author, &message, &tree, &[&parent_commit]).unwrap();
+    let _commit_oid = if config.get_bool("commit.gpgsign")? {
+        let mut ctx = Context::from_protocol(Protocol::OpenPgp)?;
+        let buf = repo.commit_create_buffer(
+            &author, &author, &message, &tree, &[&parent_commit],
+        )?;
+        let mut outbuf = Vec::new();
+
+        ctx.set_armor(true);
+        ctx.sign_detached(&*buf, &mut outbuf)?;
+
+        let contents = buf.as_str().ok_or("Buffer was not valid UTF-8")?;
+        let out = str::from_utf8(&outbuf)?;
+
+        repo.commit_signed(&contents, &out, Some("gpgsig"))?
+    } else {
+        repo.commit(update_ref, &author, &author, &message, &tree, &[&parent_commit])?
+    };
+
+    Ok(())
 }
 
 pub fn push_confirm() -> bool {

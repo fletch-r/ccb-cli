@@ -21,7 +21,10 @@ fn main() {
 
     let message = get_commit_message(&repo);
 
-    commit(&repo, &message);
+    if let Err(error) = commit(&repo, &message) {
+        eprintln!("Commit failed: {}", error);
+        std::process::exit(1);
+    }
 
     println!("Chosen paths to commit - {:#?}", paths);
     println!("Commit message: {}", message);
