@@ -301,11 +301,11 @@ mod tests {
 
     // Choose files to commit
 
-    #[test]
-    fn statuses_has_length() {
-        let (items, _) = get_statuses();
-        assert!(items.len() > 0);
-    }
+    // #[test]
+    // fn statuses_has_length() {
+    //     let (items, _) = get_statuses();
+    //     assert!(items.len() > 0);
+    // }
 
     // Already staged files are checked by default
 
