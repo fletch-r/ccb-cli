@@ -31,7 +31,7 @@ jobs:
         # List of extra files to include in build
         # EXTRA_FILES: # optional
         # Path to directory containing Cargo.toml (defaults to project root)
-        SRC_DIR: "src/main.rs" # optional
+        # SRC_DIR: "src/main.rs" # optional
         # List of archive types to publish the binaries with, default "zip", supports zip and all tar formats
         # ARCHIVE_TYPES: # optional
         # Full name of archive to upload (you must specify file extension and change this if building multiple targets)
