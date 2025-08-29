@@ -43,8 +43,9 @@ pub fn add_ccb_to_path_once() {
     };
 
     // Use the absolute path to the ccb binary
-    let ccb_binary_path = "/Users/andrewfletcher/RustroverProjects/ccb-cli/target/debug/ccb";
-    let alias_line = format!("alias ccb=\"{}\"", ccb_binary_path);
+    let binding = home_dir.join("ccb");
+    let ccb_binary_path = &binding.as_path();
+    let alias_line = format!("alias ccb=\"{}\"", ccb_binary_path.display());
 
     // Check if the alias already exists
     if let Ok(contents) = fs::read_to_string(&profile_file) {
