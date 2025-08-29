@@ -19,7 +19,7 @@ fn main() {
 
     git_add_selected(&repo, &paths);
 
-    let message = get_commit_message();
+    let message = get_commit_message(&repo);
 
     commit(&repo, &message);
 

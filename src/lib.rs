@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::{env, fs, io::Write, process};
 use std::path::PathBuf;
 use dialoguer::MultiSelect;
@@ -67,8 +68,6 @@ pub fn add_ccb_to_path_once() {
         eprintln!("Could not open profile file: {:?}", profile_file);
     }
 }
-
-
 
 fn get_statuses() -> (Vec<String>, Vec<bool>) {
     let repo = Repository::open(".").unwrap();
@@ -181,13 +180,32 @@ fn is_staged(s: Status) -> bool {
     }
 }
 
-pub fn get_commit_message() -> String {
+fn get_reference(repo: &Repository) -> String {
+    let re = Regex::new(r"([^/]*?)(\d+)").unwrap();
+
+    let branch_name = get_current_branch_name(&repo).unwrap_or_else(|| panic!("Could not find current branch name"));
+
+    let Some(name) = re.captures(&branch_name) else {
+        println!("Could not find branch name");
+        return String::from("");
+    };
+
+    println!("Reference: {:?}", &name[0]);
+
+    name[0].to_string()
+}
+
+pub fn get_commit_message(repo: &Repository) -> String {
     let message: String = dialoguer::Input::new()
         .with_prompt("Write a commit message")
         .interact_text()
         .unwrap();
 
-    message
+    let reference = get_reference(&repo);
+
+    let message_with_reference = reference.to_uppercase() + " " + message.to_string().as_str();
+
+    message_with_reference
 }
 
 pub fn commit(repo: &Repository, message: &String) {
