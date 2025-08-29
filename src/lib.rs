@@ -280,7 +280,6 @@ pub fn get_current_branch_name(repo: &Repository) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use git2::Status;
-    use crate::get_statuses;
     use crate::is_staged;
 
     // === Set-up
