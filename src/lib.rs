@@ -203,7 +203,7 @@ pub fn get_commit_message(repo: &Repository) -> String {
 
     let reference = get_reference(&repo);
 
-    let message_with_reference = reference.to_uppercase() + " " + message.to_string().as_str();
+    let message_with_reference = reference.to_uppercase() + ": " + message.to_string().as_str();
 
     message_with_reference
 }
