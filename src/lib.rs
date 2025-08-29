@@ -213,7 +213,11 @@ pub fn commit(repo: &Repository, message: &String) {
     let tree = repo
         .find_tree(index.write_tree().unwrap())
         .unwrap();
-    let author = Signature::now("fletch-r", "ath3ris@proton.me").unwrap();
+    // Get author name and email from local git config
+    let config = repo.config().unwrap();
+    let name = config.get_string("user.name").unwrap_or_else(|_| String::from("Unknown"));
+    let email = config.get_string("user.email").unwrap_or_else(|_| String::from("unknown@example.com"));
+    let author = Signature::now(&name, &email).unwrap();
 
     let parent_commit = repo.head().unwrap().peel_to_commit().unwrap();
 
